@@ -105,3 +105,24 @@ def plot_proper(seqs):
             _ = plt.plot(x, y, '.')
     plt.gca().set_aspect('equal', adjustable='box')
     plt.show()
+
+def plot_lines(lines):
+    for seq in lines:
+        for (x0, y0, x1, y1) in seq:
+            _ = plt.plot((x0, x1), (-y0, -y1), '-')
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.show()
+
+
+def cnc_visualize(sequences):
+    cx = 0
+    cy = 0
+    for [(x0, y0), sequence] in sequences:
+        cx = x0
+        cy = -y0
+        for [dx, dy] in sequence:
+            cx += dx
+            cy += -dy
+            _ = plt.plot(cx, cy, '.')
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.show()

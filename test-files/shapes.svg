@@ -1,1 +1,20 @@
-<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 241.82 261.21"><defs><style>.cls-1{fill:#fff;stroke:#231f20;stroke-miterlimit:10;}</style></defs><title>shapes</title><rect class="cls-1" x="0.5" y="0.5" width="56.69" height="28.35"/><rect class="cls-1" x="85.54" y="85.54" width="56.69" height="56.69"/><rect class="cls-1" x="153.47" y="153.47" width="56.69" height="56.69" transform="translate(-74.81 182.32) rotate(-45)"/><circle class="cls-1" cx="51.52" cy="74.2" r="17.01"/><ellipse class="cls-1" cx="113.89" cy="45.85" rx="28.35" ry="17.01"/><path class="cls-1" d="M188.29,72.06c10.13-17.4,31.65-8.22,31.65-8.22l18.35,14.87,2.53-30.06s-1.9-22.47-25-12.66" transform="translate(0.5 0.5)"/><line class="cls-1" x1="49.55" y1="157.69" x2="85.54" y2="219.72"/><polyline class="cls-1" points="22.65 197.88 42.27 251.04 120.12 236.17 95.75 260.85"/></svg>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 241.82 261.21">
+  <defs>
+    <style>.cls-1{fill:#fff;stroke:#231f20;stroke-miterlimit:10;}</style>
+  </defs><title>shapes</title>
+
+  <rect class="cls-1" x="0.5" y="0.5" width="56.69" height="28.35"/>
+  <rect class="cls-1" x="85.54" y="85.54" width="56.69" height="56.69"/>
+  <rect class="cls-2" x="153.47" y="153.47" width="56.69" height="56.69" transform="translate(-74.81 182.32) rotate(-45)"/>
+
+  <circle class="cls-1" cx="51.52" cy="74.2" r="17.01"/>
+
+  <ellipse class="cls-1" cx="113.89" cy="45.85" rx="28.35" ry="17.01"/>
+
+  <path class="cls-1" d="M188.29,72.06c10.13-17.4,31.65-8.22,31.65-8.22l18.35,14.87,2.53-30.06s-1.9-22.47-25-12.66" transform="translate(0.5 0.5)"/>
+
+  <line class="cls-1" x1="49.55" y1="157.69" x2="85.54" y2="219.72"/>
+
+  <polyline class="cls-1" points="22.65 197.88 42.27 251.04 120.12 236.17 95.75 260.85"/>
+
+</svg>
