@@ -15,7 +15,10 @@ class SVG:
     def points_to_steps(self, points):
         return int(self.STEPS_PER_POINT * float(points))
 
-    def apply_transform(self, x, y, tx, ty, r):
+    def apply_transform(self, x, y, transform):
+        if not transform:
+            return x, y
+        [[tx, ty], r] = transform
         xy = np.array([x, y, 1])
         if r:
             m2 = np.array([[math.cos(r * math.pi / 180), -math.sin(r * math.pi / 180), 0],
@@ -39,7 +42,7 @@ class SVG:
             if rotate:
                 rotate = float(rotate.group(0))
             return [translate, rotate]
-        return [None, None]
+        return None
 
     # Parse rects from a doc, returns list of tuples containing [x, y, width, height]
     # for each rect adjusted from points to steps.
@@ -56,13 +59,13 @@ class SVG:
             x2, y2 = x + width, y + height
             x3, y3 = x, y + height
 
-            [translate, rotate] = self.extract_transform(elem)
+            transform = self.extract_transform(elem)
 
-            if elem.getAttribute('transform'):
-                x0, y0 = self.apply_transform(x0, y0, translate[0], translate[1], rotate)
-                x1, y1 = self.apply_transform(x1, y1, translate[0], translate[1], rotate)
-                x2, y2 = self.apply_transform(x2, y2, translate[0], translate[1], rotate)
-                x3, y3 = self.apply_transform(x3, y3, translate[0], translate[1], rotate)
+            if transform:
+                x0, y0 = self.apply_transform(x0, y0, transform)
+                x1, y1 = self.apply_transform(x1, y1, transform)
+                x2, y2 = self.apply_transform(x2, y2, transform)
+                x3, y3 = self.apply_transform(x3, y3, transform)
 
             x0, y0 = self.points_to_steps(x0), self.points_to_steps(y0)
             x1, y1 = self.points_to_steps(x1), self.points_to_steps(y1)
@@ -76,11 +79,11 @@ class SVG:
     # for each circle adjusted from points to steps.
     def parse_circle(self, doc):
         l = []
-        for elem in doc.getElementsByTagName('circle'):
-            circle = [self.points_to_steps(elem.getAttribute('cx')),
-                         self.points_to_steps(elem.getAttribute('cy')),
-                         self.points_to_steps(elem.getAttribute('r'))]
-            l.append(circle)
+        # for elem in doc.getElementsByTagName('circle'):
+        #     circle = [self.points_to_steps(elem.getAttribute('cx')),
+        #                  self.points_to_steps(elem.getAttribute('cy')),
+        #                  self.points_to_steps(elem.getAttribute('r'))]
+        #     l.append(circle)
         return l
 
     # Parse paths from a doc, returns list of tuples containing [x, y]
@@ -89,24 +92,30 @@ class SVG:
         l = []
         for elem in doc.getElementsByTagName('path'):
             pd = elem.getAttribute('d')
+            transform = self.extract_transform(elem)
             path = parse_path(pd)
             element_path = []
             for e in path:
                 if e.length() == 0:
                     continue
                 samples = self.points_to_steps(e.length())
-                sampled_path = [(self.points_to_steps(e.point(1 / samples * i).real),
-                                 self.points_to_steps(e.point(1 / samples * i).imag),
-                                 self.points_to_steps(e.point(1 / samples * (i + 1)).real),
-                                 self.points_to_steps(e.point(1 / samples * (i + 1)).imag))
-                                for i in range(samples)]
+                sampled_path = []
+                for i in range(samples):
+                    x0, y0 = e.point(1 / samples * i).real, e.point(1 / samples * i).imag
+                    x1, y1 = e.point(1 / samples * (i + 1)).real, e.point(1 / samples * (i + 1)).imag
+                    x0, y0 = self.apply_transform(x0, y0, transform)
+                    x1, y1 = self.apply_transform(x1, y1, transform)
+                    x0, y0 = self.points_to_steps(x0), self.points_to_steps(y0)
+                    x1, y1 = self.points_to_steps(x1), self.points_to_steps(y1)
+                    sampled_path.append((x0, y0, x1, y1))
                 element_path += sampled_path
-            l.append(element_path)
+            if len(element_path) > 0:
+                l.append(element_path)
         return l
 
     def parse_polyline(self, doc):
         l = []
-        for elem in doc.getElementsByTagName('polyline'):
+        for elem in doc.getElementsByTagName('polyline') + doc.getElementsByTagName('polygon'):
             pnts = elem.getAttribute('points').split(' ')
             points = []
             for xy in range(0, len(pnts) - 2, 2):

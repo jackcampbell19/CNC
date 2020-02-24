@@ -2,9 +2,9 @@ from SVG import *
 
 class CNC:
 
-    def __init__(self):
+    def __init__(self, spr):
         # Motor steps per rotation
-        self.SPR = 256
+        self.SPR = spr
         # X size in number of steps
         self.XSIZE = 0
         # Y size in number of steps
@@ -50,6 +50,8 @@ class CNC:
     # Returns list of sequences: [(x, y), [(1/0, 1/0), ...]]
     def load_svg(self, filename):
         paths = self.svg_parser.parse(filename)
+        print(paths)
+        print()
         sequences = []
         for path in paths:
             sequence = []
@@ -61,8 +63,10 @@ class CNC:
         return sequences
 
 
-cnc = CNC()
-s = cnc.load_svg('test-files/shapes.svg')
+cnc = CNC(200)
+s = cnc.load_svg('test-files/alex.svg')
 
-import Sequence
-Sequence.cnc_visualize(s)
+print(s)
+
+import Visualization
+Visualization.visualize_sequences(s)
