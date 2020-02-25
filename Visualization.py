@@ -1,8 +1,8 @@
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 
+# Visualizes motor instruction sequences on graph.
 def visualize_sequences(sequences):
     x = []
     y = []

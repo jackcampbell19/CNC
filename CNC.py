@@ -1,4 +1,6 @@
 from SVG import *
+from Visualization import visualize_sequences
+
 
 class CNC:
 
@@ -13,6 +15,8 @@ class CNC:
         self.ZSIZE = 0
         # Parser
         self.svg_parser = SVG(StepsPerRotation=self.SPR)
+        # Sequences
+        self.sequences = None
 
     # Calculates sequence of steps to take to draw a line with a given x,y coordinates.
     # Sequence returned is array of tuples where each value specifies if the associated motor
@@ -47,11 +51,9 @@ class CNC:
         return sequence
 
     # Loads an svg file, calculates motor movements using line steps algorithm.
-    # Returns list of sequences: [(x, y), [(1/0, 1/0), ...]]
+    # Saves the sequences to the 'sequences' variable.
     def load_svg(self, filename):
         paths = self.svg_parser.parse(filename)
-        print(paths)
-        print()
         sequences = []
         for path in paths:
             sequence = []
@@ -60,13 +62,7 @@ class CNC:
                     sequence = [(x0, y0), []]
                 sequence[1] += self.calculate_line_steps(x0, y0, x1, y1)
             sequences.append(sequence)
-        return sequences
+        self.sequences = sequences
 
-
-cnc = CNC(200)
-s = cnc.load_svg('test-files/alex.svg')
-
-print(s)
-
-import Visualization
-Visualization.visualize_sequences(s)
+    def visualize_sequences(self):
+        visualize_sequences(self.sequences)
