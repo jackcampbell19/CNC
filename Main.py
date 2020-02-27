@@ -7,7 +7,7 @@ if __name__ == "__main__":
     cnc = CNC(200)
 
     # Input filename
-    filename = 'test-files/' + input('SVG: ')
+    filename = 'svg/' + input('SVG: ')
     if filename[len(filename) - 4:] != '.svg':
         print('File must be in .svg format.')
         exit(0)

@@ -6,8 +6,9 @@ import time
 
 def keyboardInterruptHandler(signal, frame):
     print("Program interrupted. Cleaning up.")
-    y_motor.switch_off()
     x_motor.switch_off()
+    y_motor.switch_off()
+    z_motor.switch_off()
     GPIO.cleanup()
     exit(0)
 
@@ -15,40 +16,16 @@ def keyboardInterruptHandler(signal, frame):
 signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
 
-y_motor = Stepper(13, 11, 15, 12, 1.8, Stepper.FULL_STEP_SEQUENCE)
-x_motor = Stepper(22, 18, 24, 16, 1.8, Stepper.FULL_STEP_SEQUENCE)
+x_motor = Stepper(11, 12, 13, 15, 16)
+y_motor = Stepper(21, 19, 22, 23, 18)
+z_motor = Stepper(29, 31, 36, 37, 32)
 
 
-print("Running x_motor forward.")
-for _ in range(200):
-    x_motor.step(True)
-    time.sleep(0.01)
 
-print("Running x_motor backward.")
-for _ in range(200):
-    x_motor.step(False)
-    time.sleep(0.01)
 
-print("Running y_motor forward.")
-for _ in range(200):
-    y_motor.step(True)
-    time.sleep(0.01)
 
-print("Running y_motor backward.")
-for _ in range(200):
-    y_motor.step(False)
-    time.sleep(0.01)
 
-print("Running both forward.")
-for _ in range(200):
-    x_motor.step(True)
-    y_motor.step(True)
-    time.sleep(0.01)
-
-print("Running both backward.")
-for _ in range(200):
-    x_motor.step(False)
-    y_motor.step(False)
-    time.sleep(0.01)
-
+x_motor.switch_off()
+y_motor.switch_off()
+z_motor.switch_off()
 GPIO.cleanup()

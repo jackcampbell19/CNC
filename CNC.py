@@ -1,5 +1,6 @@
 from SVG import *
 from Visualization import visualize_sequences
+from Motor import *
 
 
 class CNC:
@@ -17,6 +18,10 @@ class CNC:
         self.svg_parser = SVG(StepsPerRotation=self.SPR)
         # Sequences
         self.sequences = None
+        # Motors
+        self.x_motor = Stepper(11, 12, 13, 15, 16)
+        self.y_motor = Stepper(21, 19, 22, 23, 18)
+        self.z_motor = Stepper(29, 31, 36, 37, 32)
 
     # Calculates sequence of steps to take to draw a line with a given x,y coordinates.
     # Sequence returned is array of tuples where each value specifies if the associated motor
@@ -64,5 +69,47 @@ class CNC:
             sequences.append(sequence)
         self.sequences = sequences
 
+    # Visualizes the sequence loaded.
     def visualize_sequences(self):
         visualize_sequences(self.sequences)
+
+    # Position the pen up for drawing sequences.
+    def pen_up(self):
+        t = self.z_motor.rotate_to(20)
+        t.start()
+        t.join()
+
+    # Position the pen up for drawing sequences.
+    def pen_down(self):
+        t = self.z_motor.rotate_to(0)
+        t.start()
+        t.join()
+
+    # Sets the position to the given xy coordinate. DO NOT USE FOR ACCURATE STEPPING.
+    def set_position(self, x, y):
+        t1 = self.x_motor.rotate_to(x)
+        t2 = self.y_motor.rotate_to(y)
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+
+    # Draw a 2D sequence.
+    def draw_sequences(self, sequences):
+        for [(x, y), sequence] in sequences:
+            self.pen_up()
+            self.set_position(x, y)
+            self.pen_down()
+            for [dx, dy] in sequence:
+                if dx == -1:
+                    self.x_motor.step(False)
+                elif dx == 1:
+                    self.x_motor.step(True)
+                if dy == -1:
+                    self.y_motor.step(False)
+                elif dy == 1:
+                    self.y_motor.step(True)
+                sleep(Stepper.SHORTEST_DELAY)
+
+
+

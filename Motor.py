@@ -8,40 +8,47 @@ GPIO.setmode(GPIO.BOARD)
 
 class Stepper:
 
-    FULL_STEP_SEQUENCE = [
-        (1, 0, 0, 1),
-        (1, 1, 0, 0),
-        (0, 1, 1, 0),
-        (0, 0, 1, 1)
-    ]
+    SHORTEST_DELAY = 0.002
 
-    HALF_STEP_SEQUENCE = [
-        (1, 0, 0, 0),
-        (1, 1, 0, 0),
-        (0, 1, 0, 0),
-        (0, 1, 1, 0),
-        (0, 0, 1, 0),
-        (0, 0, 1, 1),
-        (0, 0, 0, 1),
-        (1, 0, 0, 1)
-    ]
-
-    SHORTEST_DELAY = 0.008
-
-    def __init__(self, in1, in2, in3, in4, StepAngle, StepSequence):
-        self.pins = [in1, in2, in3, in4]
-        for pin in self.pins:
+    def __init__(self, stp, dir, ms1, ms2, slp):
+        self.stp = stp
+        self.dir = dir
+        self.ms1 = ms1
+        self.ms2 = ms2
+        self.slp = slp
+        for pin in [self.stp, self.dir, self.ms1, self.ms2, self.slp]:
             GPIO.setup(pin, GPIO.OUT)
-        self.steps_per_rotation = int(360.0 / StepAngle * (len(StepSequence) / 4))
-        self.sequence = StepSequence
-        self.sequence_length = len(StepSequence)
         self.current_step = 0
+        self.switch_on()
+        self.set_full_step()
 
     def step(self, forward):
-        self.current_step += 1 if forward else -1
-        pattern = self.sequence[self.current_step % self.sequence_length]
-        for i in range(4):
-            GPIO.output(self.pins[i], pattern[i])
+        if forward:
+            self.current_step += 1
+            GPIO.output(self.dir, 0)
+            GPIO.output(self.stp, 0)
+            GPIO.output(self.stp, 1)
+        else:
+            self.current_step -= 1
+            GPIO.output(self.dir, 1)
+            GPIO.output(self.stp, 0)
+            GPIO.output(self.stp, 1)
+
+    def set_full_step(self):
+        GPIO.output(self.ms1, 0)
+        GPIO.output(self.ms2, 0)
+
+    def set_half_step(self):
+        GPIO.output(self.ms1, 1)
+        GPIO.output(self.ms2, 0)
+
+    def set_quarter_step(self):
+        GPIO.output(self.ms1, 0)
+        GPIO.output(self.ms2, 1)
+
+    def set_eigth_step(self):
+        GPIO.output(self.ms1, 1)
+        GPIO.output(self.ms2, 1)
 
     def rotate_to(self, step, delay=SHORTEST_DELAY):
         number_of_steps = step - self.current_step
@@ -59,5 +66,7 @@ class Stepper:
         return Thread(target=threadfun)
 
     def switch_off(self):
-        for i in range(4):
-            GPIO.output(self.pins[i], False)
+        GPIO.output(self.slp, 0)
+
+    def switch_on(self):
+        GPIO.output(self.slp, 1)
