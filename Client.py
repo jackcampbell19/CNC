@@ -1,11 +1,20 @@
 import socket
 
-HOST = '127.0.0.1'  # The server's hostname or IP address
-PORT = 65432        # The port used by the server
+TCP_IP = '127.0.0.1'
+TCP_PORT = 5026
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.connect((HOST, PORT))
-    s.sendall(b'Hello, world')
-    data = s.recv(1024)
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((TCP_IP, TCP_PORT))
 
-print('Received', repr(data))
+
+def send(string):
+    s.send(string.encode('ascii'))
+    data = s.recv(5)
+    print("Returned:", data)
+
+
+while True:
+    send(input("::"))
+
+
+s.close()

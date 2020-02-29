@@ -3,6 +3,7 @@ from xml.dom import minidom
 import numpy as np
 import re
 import math
+import json
 
 
 # SVG class parses an .svg file into discrete line segments measured in motor steps.
@@ -38,9 +39,13 @@ class SVG:
             translate = re.search(r'(?<=translate\()[0-9\-. ]+', transform_string)
             if translate:
                 translate = [float(x) for x in translate.group(0).split(' ')]
+            else:
+                translate = [0, 0]
             rotate = re.search(r'(?<=rotate\()[0-9\-. ]+', transform_string)
             if rotate:
                 rotate = float(rotate.group(0))
+            else:
+                rotate = 0
             return [translate, rotate]
         return None
 
@@ -117,14 +122,20 @@ class SVG:
         l = []
         for elem in doc.getElementsByTagName('polyline') + doc.getElementsByTagName('polygon'):
             pnts = elem.getAttribute('points').split(' ')
+            transform = self.extract_transform(elem)
+            pnts = [float(x) for x in pnts]
             points = []
             for xy in range(0, len(pnts) - 2, 2):
+                x0, y0 = pnts[xy % len(pnts)], pnts[(xy + 1) % len(pnts)]
+                x1, y1 = pnts[(xy + 2) % len(pnts)], pnts[(xy + 3) % len(pnts)]
+                x0, y0 = self.apply_transform(x0, y0, transform)
+                x1, y1 = self.apply_transform(x1, y1, transform)
                 points.append(
                     (
-                        self.points_to_steps(float(pnts[xy % len(pnts)])),
-                        self.points_to_steps(float(pnts[(xy + 1) % len(pnts)])),
-                        self.points_to_steps(float(pnts[(xy + 2) % len(pnts)])),
-                        self.points_to_steps(float(pnts[(xy + 3) % len(pnts)]))
+                        self.points_to_steps(x0),
+                        self.points_to_steps(y0),
+                        self.points_to_steps(x1),
+                        self.points_to_steps(y1)
                     )
                 )
             l.append(points)
@@ -138,7 +149,39 @@ class SVG:
             l.append(points)
         return l
 
-    # Parse a file for all objects. Returns a list of line definitions.
+    # Calculates sequence of steps to take to draw a line with a given x,y coordinates.
+    # Sequence returned is array of tuples where each value specifies if the associated motor
+    # should be stepped forward, backward, or stay still.
+    def calculate_line_steps(self, x0, y0, x1, y1):
+        if x0 == x1:
+            f = lambda x: y1
+        else:
+            m = (y1 - y0) / (x1 - x0)
+            b = -(m * x0) + y0
+            f = lambda x: m * x + b
+        sequence = []
+        direction = 1 if x1 > x0 else -1
+        current_y = y0
+        dx = 0
+        for current_x in range(x0, x1 + direction, direction):
+            expected_y = int(f(current_x))
+            subsequence = [dx, 0, 0]
+            while current_y != expected_y:
+                if current_y < expected_y:
+                    current_y += 1
+                    subsequence[1] = 1
+                elif current_y > expected_y:
+                    current_y -= 1
+                    subsequence[1] = -1
+                sequence.append(subsequence)
+                subsequence = [0, 0, 0]
+            if dx == 0:
+                dx = direction
+            if subsequence[0] != 0:
+                sequence.append(subsequence)
+        return sequence
+
+    # Parse a file for all objects. Returns an mstp.
     def parse(self, filename):
         doc = minidom.parse(filename)
         paths = []
@@ -147,4 +190,46 @@ class SVG:
         paths += self.parse_path(doc)
         paths += self.parse_rect(doc)
         doc.unlink()
-        return paths
+        sequences = []
+        for path in paths:
+            sequence = []
+            for [x0, y0, x1, y1] in path:
+                if len(sequence) == 0:
+                    sequence = [(x0, y0, 0), []]
+                sequence[1] += self.calculate_line_steps(x0, y0, x1, y1)
+            sequences.append(sequence)
+        sequences.sort(key=lambda x: math.sqrt(x[0][0] ** 2 + x[0][1] ** 2))
+        return {'meta': [], 'data': sequences}
+
+    def export(self, sequences, filename):
+        s = json.dumps(sequences)
+        f = open('mstp/' + filename, 'w')
+        f.write(s)
+        f.close()
+
+
+def calculate_circle_steps(radius, angle_delta=math.pi/180):
+    x = radius
+    y = 0
+    sequence = []
+    angle = 0
+    while angle < 2.0 * math.pi:
+        xx = int(radius * math.cos(angle))
+        yy = int(radius * math.sin(angle))
+        while xx != x or yy != y:
+            subsequence = [0,0]
+            if xx > x:
+                subsequence[0] = 1
+                x += 1
+            elif xx < x:
+                subsequence[0] = -1
+                x -= 1
+            if yy > y:
+                subsequence[1] = 1
+                y += 1
+            elif yy < y:
+                subsequence[1] = -1
+                y -= 1
+            sequence.append(subsequence)
+        angle += angle_delta
+    return sequence

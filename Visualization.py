@@ -2,13 +2,14 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 
-# Visualizes motor instruction sequences on graph.
-def visualize_sequences(sequences):
+# Visualizes motor instruction mstp on graph.
+def visualize_mstp(mstp):
+    sequences = mstp['data']
     x = []
     y = []
-    for [(x0, y0), sequence] in sequences:
+    for [(x0, y0, z0), sequence] in sequences:
         cx, cy = x0, y0
-        for [dx, dy] in sequence:
+        for [dx, dy, dz] in sequence:
             cx += dx
             cy += dy
             x.append(cx)

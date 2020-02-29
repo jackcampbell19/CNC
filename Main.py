@@ -1,4 +1,14 @@
 from CNC import CNC
+import signal
+
+
+def handler(s, f):
+    print("Program interrupted. Cleaning up.")
+    cnc.shutdown()
+    exit(0)
+
+
+signal.signal(signal.SIGINT, handler)
 
 
 if __name__ == "__main__":
@@ -7,13 +17,14 @@ if __name__ == "__main__":
     cnc = CNC(200)
 
     # Input filename
-    filename = 'svg/' + input('SVG: ')
-    if filename[len(filename) - 4:] != '.svg':
-        print('File must be in .svg format.')
-        exit(0)
+    filename = 'mstp/' + input('File: ')
 
     # Load the svg into the cnc
-    cnc.load_svg(filename)
+    # cnc.load_svg(filename)
+    cnc.load_mstp(filename)
 
-    # Visualize the processed svg
-    cnc.visualize_sequences()
+    # Draw loaded svg
+    cnc.draw()
+
+    # Shutdown cnc
+    cnc.shutdown()
