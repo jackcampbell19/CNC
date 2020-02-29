@@ -24,7 +24,7 @@ if __name__ == "__main__":
     cnc.load_mstp(filename)
 
     # Draw loaded svg
-    cnc.draw()
+    cnc.run()
 
     # Shutdown cnc
     cnc.shutdown()

@@ -51,7 +51,7 @@
 
 import SVG
 svg = SVG.SVG(200)
-s = svg.parse('svg/void-01.svg')
-svg.export(s, 'text.mstp')
+s = svg.parse('svg/close-lines-01.svg')
+svg.export(s, 'close-lines.mstp')
 import Visualization
 Visualization.visualize_mstp(s)

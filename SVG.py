@@ -199,7 +199,7 @@ class SVG:
                 sequence[1] += self.calculate_line_steps(x0, y0, x1, y1)
             sequences.append(sequence)
         sequences.sort(key=lambda x: math.sqrt(x[0][0] ** 2 + x[0][1] ** 2))
-        return {'meta': [], 'data': sequences}
+        return {'meta': {'mode': 'draw-2d', 'safe-height': 10, 'step-down': None}, 'data': sequences}
 
     def export(self, sequences, filename):
         s = json.dumps(sequences)

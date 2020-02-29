@@ -5,9 +5,11 @@ import math
 
 class CNC:
 
-    MODE_CALIBRATE = 'mode-calibrate'
-    MODE_DRAW_2D = 'mode-draw-2d'
-    MODE_MILL_3D = 'mode-mill-3d'
+    MODE_CALIBRATE = 'calibrate'
+    MODE_DRAW_2D = 'draw-2d'
+    MODE_MILL_2D = 'mill-2d'
+    MODE_MILL_3D = 'mill-3d'
+    MODE_PRINT_3D = 'print-3d'
 
     def __init__(self, spr, error_handler):
         # Motor steps per rotation
@@ -21,7 +23,9 @@ class CNC:
         # Z size in number of steps
         self.ZSIZE = 0
         # Loaded mstp data
-        self.mstp = None
+        self.mstp_data = None
+        self.safe_height = 200
+        self.step_down = None
         # Mode
         self.mode = None
         # Motors
@@ -31,13 +35,23 @@ class CNC:
 
     def load_mstp(self, filename):
         with open(filename) as mstp_file:
-            self.mstp = json.load(mstp_file)
-
-    # Position the pen up for drawing mstp.
-    def pen_down(self):
-        t = self.z_motor.rotate_to(0)
-        t.start()
-        t.join()
+            mstp = json.load(mstp_file)
+            self.mstp_data = mstp['data']
+            sh = mstp['meta']['safe-height']
+            if sh:
+                self.safe_height = sh
+            sd = mstp['meta']['step-down']
+            if sd:
+                self.step_down = sd
+            m = mstp['meta']['mode']
+            if m == self.MODE_DRAW_2D:
+                self.mode = self.MODE_DRAW_2D
+            elif m == self.MODE_MILL_3D:
+                self.mode = self.MODE_MILL_3D
+            elif m == self.MODE_MILL_2D:
+                self.mode = self.MODE_MILL_2D
+            elif m == self.MODE_PRINT_3D:
+                self.mode = self.MODE_PRINT_3D
 
     # Sets the position to the given xy coordinate. DO NOT USE FOR ACCURATE STEPPING.
     def set_position(self, x=None, y=None, z=None):
@@ -55,9 +69,12 @@ class CNC:
 
     # Draw the loaded 2D sequence.
     def draw_2d(self):
-        for [(x, y, z), sequence] in self.mstp:
-            self.set_position(z=20)
-            self.set_position(x, y)
+        if not self.mstp_data:
+            self.error_handler('Missing .mstp file.')
+            return
+        for [(x, y, _), sequence] in self.mstp_data:
+            self.set_position(z=self.safe_height)
+            self.set_position(x=x, y=y)
             self.set_position(z=0)
             for [dx, dy, _] in sequence:
                 if dx == -1:
@@ -69,12 +86,10 @@ class CNC:
                 elif dy == 1:
                     self.y_motor.step(True)
                 sleep(Stepper.SHORTEST_DELAY)
+        self.return_to_origin()
 
     # Runs the current mstp file.
     def run(self):
-        if not self.mstp:
-            self.error_handler('Missing .mstp file.')
-            return
         if not self.mode:
             self.error_handler('Mode has not been set.')
             return
@@ -85,8 +100,14 @@ class CNC:
         elif self.mode == self.MODE_MILL_3D:
             pass
 
+    def return_to_origin(self):
+        self.set_position(z=self.safe_height)
+        self.set_position(x=0, y=0)
+        self.set_position(z=0)
+
     # Shuts the cnc down.
     def shutdown(self):
+        self.return_to_origin()
         self.x_motor.switch_off()
         self.y_motor.switch_off()
         self.z_motor.switch_off()
