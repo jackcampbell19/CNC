@@ -56,11 +56,11 @@ class CNC:
     # Sets the position to the given xy coordinate. DO NOT USE FOR ACCURATE STEPPING.
     def set_position(self, x=None, y=None, z=None):
         threads = []
-        if x:
+        if x is not None:
             threads.append(self.x_motor.rotate_to(x))
-        if y:
+        if y is not None:
             threads.append(self.y_motor.rotate_to(y))
-        if z:
+        if z is not None:
             threads.append(self.z_motor.rotate_to(z))
         for t in threads:
             t.start()

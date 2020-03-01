@@ -1,5 +1,6 @@
 from CNC import CNC
 import signal
+import time
 
 
 def handler(s, f):
@@ -8,13 +9,16 @@ def handler(s, f):
     exit(0)
 
 
-signal.signal(signal.SIGINT, handler)
+def error(e):
+    print(e)
 
 
 if __name__ == "__main__":
 
+    signal.signal(signal.SIGINT, handler)
+
     # Define cnc
-    cnc = CNC(200)
+    cnc = CNC(200, error_handler=error)
 
     # Input filename
     filename = 'mstp/' + input('File: ')
