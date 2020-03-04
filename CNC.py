@@ -1,7 +1,6 @@
 from Motor import *
-import RPi.GPIO as GPIO
-import json
-import math
+import RPi.GPIO as gpio
+import MSTP as mstp
 
 class CNC:
 
@@ -35,15 +34,15 @@ class CNC:
 
     def load_mstp(self, filename):
         with open(filename) as mstp_file:
-            mstp = json.load(mstp_file)
-            self.mstp_data = mstp['data']
-            sh = mstp['meta']['safe-height']
+            mstp_data = mstp.parse(filename)
+            self.mstp_data = mstp_data['data']
+            sh = mstp_data['meta']['safe-height']
             if sh:
                 self.safe_height = sh
-            sd = mstp['meta']['step-down']
+            sd = mstp_data['meta']['step-down']
             if sd:
                 self.step_down = sd
-            m = mstp['meta']['mode']
+            m = mstp_data['meta']['mode']
             if m == self.MODE_DRAW_2D:
                 self.mode = self.MODE_DRAW_2D
             elif m == self.MODE_MILL_3D:
@@ -77,11 +76,11 @@ class CNC:
             self.set_position(x=x, y=y)
             self.set_position(z=0)
             for [dx, dy, _] in sequence:
-                if dx == -1:
+                if dx == 2:
                     self.x_motor.step(False)
                 elif dx == 1:
                     self.x_motor.step(True)
-                if dy == -1:
+                if dy == 2:
                     self.y_motor.step(False)
                 elif dy == 1:
                     self.y_motor.step(True)
@@ -111,4 +110,4 @@ class CNC:
         self.x_motor.switch_off()
         self.y_motor.switch_off()
         self.z_motor.switch_off()
-        GPIO.cleanup()
+        gpio.cleanup()

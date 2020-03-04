@@ -4,7 +4,7 @@ from matplotlib.animation import FuncAnimation
 
 # Visualizes motor instruction mstp on graph.
 def visualize_mstp(mstp):
-    sequences = mstp['data']
+    sequences = mstp
     x = []
     y = []
     for [(x0, y0, z0), sequence] in sequences:

@@ -3,7 +3,7 @@ from xml.dom import minidom
 import numpy as np
 import re
 import math
-import json
+import MSTP as mstp
 
 
 # SVG class parses an .svg file into discrete line segments measured in motor steps.
@@ -11,6 +11,7 @@ class SVG:
 
     def __init__(self, StepsPerRotation):
         self.STEPS_PER_POINT = 1 / ((8 / StepsPerRotation) * (72 / 25.4))
+        self.current = None
 
     # Converts points to steps
     def points_to_steps(self, points):
@@ -199,13 +200,11 @@ class SVG:
                 sequence[1] += self.calculate_line_steps(x0, y0, x1, y1)
             sequences.append(sequence)
         sequences.sort(key=lambda x: math.sqrt(x[0][0] ** 2 + x[0][1] ** 2))
-        return {'meta': {'mode': 'draw-2d', 'safe-height': 10, 'step-down': None}, 'data': sequences}
+        self.current = sequences
 
-    def export(self, sequences, filename):
-        s = json.dumps(sequences)
-        f = open('mstp/' + filename, 'w')
-        f.write(s)
-        f.close()
+    def export(self, filename):
+        data = mstp.create(self.current, safe_height=20, mode='draw-2d')
+        mstp.export(filename, data)
 
 
 def calculate_circle_steps(radius, angle_delta=math.pi/180):
