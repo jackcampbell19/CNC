@@ -23,7 +23,11 @@ def export(filename, mstp):
 
 # Parses a string of data into an mstp.
 def parse(input_data):
-    [meta, data] = input_data.split('=')
+    comps = input_data.split('=')
+    if len(comps) != 2:
+        return None
+    meta = comps[0]
+    data = comps[1]
     meta = json.loads(meta)
     sequences = []
     for object_sequence_string in data.split(';'):

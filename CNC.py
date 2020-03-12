@@ -28,13 +28,13 @@ class CNC:
         # Mode
         self.mode = None
         # Motors
-        self.x_motor = Stepper(11, 12, 13, 15, 16)
-        self.y_motor = Stepper(21, 19, 22, 23, 18)
-        self.z_motor = Stepper(29, 31, 36, 37, 32)
+        self.x_motor = Stepper(11, 12)
+        self.y_motor = Stepper(13, 15)
+        self.z_motor = Stepper(16, 18)
 
     def load_mstp(self, filename):
         with open(filename) as mstp_file:
-            mstp_data = mstp.parse(filename)
+            mstp_data = mstp.load(filename)
             self.mstp_data = mstp_data['data']
             sh = mstp_data['meta']['safe-height']
             if sh:

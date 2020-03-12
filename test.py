@@ -1,7 +1,7 @@
-# from Motor import Stepper
-# import RPi.GPIO as GPIO
+from Motor import Stepper
+import RPi.GPIO as gpio
 # import signal
-# import time
+import time
 #
 #
 # def keyboardInterruptHandler(signal, frame):
@@ -15,18 +15,28 @@
 #
 # signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
+x_motor = Stepper(11, 12)
+# y_motor = Stepper(13, 15)
+# z_motor = Stepper(16, 18)
+
+# t = x_motor.rotate_to(9250)
+# t.start()
+# t.join()
+#
+# t = x_motor.rotate_to(0)
+# t.start()
+# t.join()
+
+
+t = x_motor.rotate_to(2000)
+t.start()
+t.join()
+
+t = x_motor.rotate_to(0)
+t.start()
+t.join()
 
 
 
 
-import SVG
-import MSTP
-# svg = SVG.SVG(200)
-# svg.parse('svg/e.svg')
-# svg.export('mstp/e.mstp')
-
-e = MSTP.load('mstp/e.mstp')
-print(e)
-
-# import Visualization
-# Visualization.visualize_mstp(s)
+gpio.cleanup()
