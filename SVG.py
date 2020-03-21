@@ -15,6 +15,8 @@ class SVG:
 
     # Converts points to steps
     def points_to_steps(self, points):
+        if points is None or type(points) is str and len(points) == 0:
+            return 0
         return int(self.STEPS_PER_POINT * float(points))
 
     def apply_transform(self, x, y, transform):
@@ -78,7 +80,7 @@ class SVG:
             x2, y2 = self.points_to_steps(x2), self.points_to_steps(y2)
             x3, y3 = self.points_to_steps(x3), self.points_to_steps(y3)
 
-            l.append([(x0, y0, x1, y1), (x1, y1, x2, y2), (x2, y2, x3, y3), (x3, y3, x0, y0)])
+            l.append([(x0, y0), (x1, y1), (x2, y2), (x3, y3), (x0, y0)])
         return l
 
     # Parse circles from a doc, returns list of tuples containing [x, y, radius]
@@ -113,7 +115,8 @@ class SVG:
                     x1, y1 = self.apply_transform(x1, y1, transform)
                     x0, y0 = self.points_to_steps(x0), self.points_to_steps(y0)
                     x1, y1 = self.points_to_steps(x1), self.points_to_steps(y1)
-                    sampled_path.append((x0, y0, x1, y1))
+                    sampled_path.append((x0, y0))
+                    sampled_path.append((x1, y1))
                 element_path += sampled_path
             if len(element_path) > 0:
                 l.append(element_path)
@@ -126,17 +129,13 @@ class SVG:
             transform = self.extract_transform(elem)
             pnts = [float(x) for x in pnts]
             points = []
-            for xy in range(0, len(pnts) - 2, 2):
-                x0, y0 = pnts[xy % len(pnts)], pnts[(xy + 1) % len(pnts)]
-                x1, y1 = pnts[(xy + 2) % len(pnts)], pnts[(xy + 3) % len(pnts)]
+            for i in range(0, len(pnts) - 1, 2):
+                x0, y0 = pnts[i], pnts[i + 1]
                 x0, y0 = self.apply_transform(x0, y0, transform)
-                x1, y1 = self.apply_transform(x1, y1, transform)
                 points.append(
                     (
                         self.points_to_steps(x0),
-                        self.points_to_steps(y0),
-                        self.points_to_steps(x1),
-                        self.points_to_steps(y1)
+                        self.points_to_steps(y0)
                     )
                 )
             l.append(points)
@@ -145,45 +144,13 @@ class SVG:
     def parse_line(self, doc):
         l = []
         for elem in doc.getElementsByTagName('line'):
-            points = [(self.points_to_steps(elem.getAttribute('x1')), self.points_to_steps(elem.getAttribute('y1')),
-                       self.points_to_steps(elem.getAttribute('x2')), self.points_to_steps(elem.getAttribute('y2')))]
-            l.append(points)
+            l.append((self.points_to_steps(elem.getAttribute('x1')), self.points_to_steps(elem.getAttribute('y1'))))
+            l.append((self.points_to_steps(elem.getAttribute('x2')), self.points_to_steps(elem.getAttribute('y2'))))
         return l
-
-    # Calculates sequence of steps to take to draw a line with a given x,y coordinates.
-    # Sequence returned is array of tuples where each value specifies if the associated motor
-    # should be stepped forward, backward, or stay still.
-    def calculate_line_steps(self, x0, y0, x1, y1):
-        if x0 == x1:
-            f = lambda x: y1
-        else:
-            m = (y1 - y0) / (x1 - x0)
-            b = -(m * x0) + y0
-            f = lambda x: m * x + b
-        sequence = []
-        direction = 1 if x1 > x0 else -1
-        current_y = y0
-        dx = 0
-        for current_x in range(x0, x1 + direction, direction):
-            expected_y = int(f(current_x))
-            subsequence = [dx, 0, 0]
-            while current_y != expected_y:
-                if current_y < expected_y:
-                    current_y += 1
-                    subsequence[1] = 1
-                elif current_y > expected_y:
-                    current_y -= 1
-                    subsequence[1] = -1
-                sequence.append(subsequence)
-                subsequence = [0, 0, 0]
-            if dx == 0:
-                dx = direction
-            if subsequence[0] != 0:
-                sequence.append(subsequence)
-        return sequence
 
     # Parse a file for all objects. Returns an mstp.
     def parse(self, filename):
+        safe_height = 40
         doc = minidom.parse(filename)
         paths = []
         paths += self.parse_line(doc)
@@ -192,19 +159,16 @@ class SVG:
         paths += self.parse_rect(doc)
         doc.unlink()
         sequences = []
-        for path in paths:
-            sequence = []
-            for [x0, y0, x1, y1] in path:
-                if len(sequence) == 0:
-                    sequence = [(x0, y0, 0), []]
-                sequence[1] += self.calculate_line_steps(x0, y0, x1, y1)
-            sequences.append(sequence)
-        sequences.sort(key=lambda x: math.sqrt(x[0][0] ** 2 + x[0][1] ** 2))
+        for points in paths:
+            sequences.append((points[0][0], points[0][1], safe_height))
+            for [x0, y0] in points:
+                sequences.append((x0, y0, 0))
+            sequences.append((points[len(points) - 1][0], points[len(points) - 1][1], safe_height))
+        # sequences.sort(key=lambda x: math.sqrt(x[0][0] ** 2 + x[0][1] ** 2))
         self.current = sequences
 
-    def export(self, filename):
-        data = mstp.create(self.current, safe_height=20, mode='draw-2d')
-        mstp.export(filename, data)
+    def export(self, name, path):
+        data = mstp.create(self.current, name=name, path=path)
 
 
 def calculate_circle_steps(radius, angle_delta=math.pi/180):
@@ -232,3 +196,11 @@ def calculate_circle_steps(radius, angle_delta=math.pi/180):
             sequence.append(subsequence)
         angle += angle_delta
     return sequence
+
+
+svg = SVG(200)
+svg.parse('svg/poly.svg')
+svg.export('poly', 'mstp/')
+
+import Visualization
+Visualization.visualize_mstp(svg.current)
