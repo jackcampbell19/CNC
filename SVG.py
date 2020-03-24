@@ -4,6 +4,7 @@ import numpy as np
 import re
 import math
 from CoordinateTrace import CoordinateTrace
+from MotorStep import MotorStep
 
 
 # SVG class parses an .svg file into discrete line segments measured in motor steps.
@@ -150,7 +151,7 @@ class SVG:
         return l
 
     # Parse a file for all objects. Returns an mstp.
-    def parse(self, filename):
+    def load(self, filename):
         doc = minidom.parse(filename)
         paths = []
         paths += self.parse_line(doc)
@@ -167,9 +168,14 @@ class SVG:
         # sequences.sort(key=lambda x: math.sqrt(x[0][0] ** 2 + x[0][1] ** 2))
         self.coordinates = sequences
 
-    def export(self, name, path):
+    def export_ct(self, name, path):
         ct = CoordinateTrace(name, self.coordinates, self.safe_height)
         ct.export(path)
+
+    def export_mstp(self, name, path):
+        ct = CoordinateTrace(name, self.coordinates, self.safe_height)
+        mstp = MotorStep(ct=ct)
+        mstp.export(path)
 
 
 def calculate_circle_steps(radius, angle_delta=math.pi/180):
@@ -197,11 +203,3 @@ def calculate_circle_steps(radius, angle_delta=math.pi/180):
             sequence.append(subsequence)
         angle += angle_delta
     return sequence
-
-
-svg = SVG(200, 40)
-svg.parse('svg/poly.svg')
-svg.export('poly', 'ct/')
-
-# import Visualization
-# Visualization.visualize_mstp(svg.coordinates)

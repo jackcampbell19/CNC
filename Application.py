@@ -147,7 +147,7 @@ class Application:
 
     def load_svg(self):
         filename = askopenfilename()
-        self.svg_parser.parse(filename)
+        self.svg_parser.load(filename)
         self.current_mstp = self.svg_parser.coordinates
         # visualize_mstp(self.current_mstp)
         self.send_command(Commands.LOAD_MSTP, self.current_mstp)

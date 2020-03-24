@@ -2,48 +2,64 @@ from PIL import Image
 import numpy as np
 from CoordinateTrace import CoordinateTrace
 import math
+from MotorStep import MotorStep
 
 
-def extract_pixel_matrix(filename):
-    im = Image.open(filename, 'r')
-    m = np.array(im.getdata())
-    # weight, width
-    m = m.reshape((700, 700, 3))
-    return m
+class Rasterizer:
 
+    def __init__(self):
+        self.pixle_matrix = None
+        self.coordinates = None
+        self.ct = None
 
-def proccess(pix_matrix):
-    width = pix_matrix.shape[1]
-    height = pix_matrix.shape[0]
-    x = 0
-    dir = 1
-    points = []
-    dx = 5
-    dy = 5
-    is_down = False
-    safe_height = 30
-    for y in range(0, height, dy):
-        for p in range(math.floor(width / dx) - 1):
-            s = pix_matrix[y, x][0] + pix_matrix[y, x][1] + pix_matrix[y, x][2]
-            prob = (1 / 765 ** 2) * (s - 765) ** 2
-            if np.random.uniform() > prob:
-                if is_down:
-                    points.append((x, y, 0))
-                    points.append((x, y, safe_height))
-                    is_down = False
-            else:
-                if not is_down:
-                    points.append((x, y, safe_height))
-                    points.append((x, y, 0))
-                    is_down = True
-            x += dir * dx
-        dir *= -1
-    return points
+    def extract_pixel_matrix(self, filename):
+        im = Image.open(filename, 'r')
+        m = np.array(im.getdata())
+        # height, width
+        m = m.reshape((im.size[1], im.size[0], 3))
+        self.pixle_matrix = m
 
+    def proccess(self):
+        if self.pixle_matrix is None:
+            return None
+        width = self.pixle_matrix.shape[1]
+        height = self.pixle_matrix.shape[0]
+        x = 0
+        dir = 1
+        points = []
+        dx = 4
+        dy = 4
+        is_down = False
+        safe_height = 30
+        for y in range(0, height, dy):
+            for p in range(math.floor(width / dx) - 1):
+                s = self.pixle_matrix[y, x][0] + self.pixle_matrix[y, x][1] + self.pixle_matrix[y, x][2]
+                prob = (1 / 765 ** 2) * (s - 765) ** 2
+                if np.random.uniform() > prob:
+                    if is_down:
+                        points.append((x, y, 0))
+                        points.append((x, y, safe_height))
+                        is_down = False
+                else:
+                    if not is_down:
+                        points.append((x, y, safe_height))
+                        points.append((x, y, 0))
+                        is_down = True
+                x += dir * dx
+            dir *= -1
+        return points
 
-pix_matrix = extract_pixel_matrix('jpg/sq.jpg')
-points = proccess(pix_matrix)
-ct = CoordinateTrace('sq', points, safe_height=30)
-ct.export('ct/')
-import Visualization
-Visualization.visualize_coordinates(points)
+    def load(self, filename):
+        self.extract_pixel_matrix(filename)
+        self.coordinates = self.proccess()
+
+    def export_ct(self, name, path):
+        ct = CoordinateTrace(name, self.coordinates, safe_height=30)
+        ct.export(path)
+        self.ct = ct
+
+    def export_mstp(self, name, path):
+        if self.ct is None:
+            self.ct = CoordinateTrace(name, self.coordinates, safe_height=30)
+        mstp = MotorStep(ct=self.ct)
+        mstp.export(path)

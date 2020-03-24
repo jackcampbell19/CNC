@@ -65,5 +65,5 @@
 from SVG import *
 
 p = SVG(200)
-p.parse("svg/one-line.svg")
-p.export("mstp/ol.mstp")
+p.load("svg/one-line.svg")
+p.export_ct("mstp/ol.mstp")
