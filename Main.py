@@ -21,7 +21,7 @@ if __name__ == "__main__":
     cnc = CNC(200, error_handler=error)
 
     # Input filename
-    filename = 'mstp/' + input('File: ')
+    filename = 'ct/' + input('File: ')
 
     # Load the svg into the cnc
     # cnc.load_svg(filename)

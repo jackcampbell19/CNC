@@ -3,15 +3,16 @@ from xml.dom import minidom
 import numpy as np
 import re
 import math
-import MSTP as mstp
+from CoordinateTrace import CoordinateTrace
 
 
 # SVG class parses an .svg file into discrete line segments measured in motor steps.
 class SVG:
 
-    def __init__(self, StepsPerRotation):
+    def __init__(self, StepsPerRotation, safe_height):
         self.STEPS_PER_POINT = 1 / ((8 / StepsPerRotation) * (72 / 25.4))
-        self.current = None
+        self.coordinates = None
+        self.safe_height = safe_height
 
     # Converts points to steps
     def points_to_steps(self, points):
@@ -150,7 +151,6 @@ class SVG:
 
     # Parse a file for all objects. Returns an mstp.
     def parse(self, filename):
-        safe_height = 40
         doc = minidom.parse(filename)
         paths = []
         paths += self.parse_line(doc)
@@ -160,15 +160,16 @@ class SVG:
         doc.unlink()
         sequences = []
         for points in paths:
-            sequences.append((points[0][0], points[0][1], safe_height))
+            sequences.append((points[0][0], points[0][1], self.safe_height))
             for [x0, y0] in points:
                 sequences.append((x0, y0, 0))
-            sequences.append((points[len(points) - 1][0], points[len(points) - 1][1], safe_height))
+            sequences.append((points[len(points) - 1][0], points[len(points) - 1][1], self.safe_height))
         # sequences.sort(key=lambda x: math.sqrt(x[0][0] ** 2 + x[0][1] ** 2))
-        self.current = sequences
+        self.coordinates = sequences
 
     def export(self, name, path):
-        data = mstp.create(self.current, name=name, path=path)
+        ct = CoordinateTrace(name, self.coordinates, self.safe_height)
+        ct.export(path)
 
 
 def calculate_circle_steps(radius, angle_delta=math.pi/180):
@@ -198,9 +199,9 @@ def calculate_circle_steps(radius, angle_delta=math.pi/180):
     return sequence
 
 
-svg = SVG(200)
+svg = SVG(200, 40)
 svg.parse('svg/poly.svg')
-svg.export('poly', 'mstp/')
+svg.export('poly', 'ct/')
 
-import Visualization
-Visualization.visualize_mstp(svg.current)
+# import Visualization
+# Visualization.visualize_mstp(svg.coordinates)

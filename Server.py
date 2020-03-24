@@ -61,8 +61,8 @@ if __name__ == '__main__':
                     pass
                 elif j['command'] == Commands.LOAD_MSTP:
                     mstp = j['data']
-                    cnc.mstp = mstp
-                    print("setting mstp data to ", cnc.mstp)
+                    cnc.ct = mstp
+                    print("setting mstp data to ", cnc.ct)
                 elif j['command'] == Commands.RUN_MSTP:
                     cnc.run()
             except socket.error:

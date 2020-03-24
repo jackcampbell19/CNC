@@ -2,9 +2,6 @@ import numpy as np
 import math
 
 
-# Calculates sequence of steps to take to draw a line with a given x,y coordinates.
-# Sequence returned is array of tuples where each value specifies if the associated motor
-# should be stepped forward, backward, or stay still.
 def calculate_line_steps(p0, p1):
     seq = []
     p0 = np.array(p0)
@@ -29,3 +26,41 @@ def calculate_line_steps(p0, p1):
             seq.append(list(dp))
         last_position = delta_position
     return seq
+
+
+# Calculates sequence of steps to take to draw a line with a given x, y, z coordinates from s to e.
+def calculate_motor_sequence(s, e):
+    sequence = []
+    s = np.array(s)
+    e = np.array(e)
+    d = e - s
+    m = round(np.linalg.norm(d))
+    f = 1.0 / m
+    last_position = (0, 0, 0)
+    scalar = 0
+    for _ in range(int(m) + 1):
+        vector_position = (scalar * d).round()
+        dv = vector_position - last_position
+        if np.linalg.norm(dv) != 0:
+            sequence.append([int(dv[0]), int(dv[1]), int(dv[2])])
+        last_position = vector_position
+        scalar += f
+    return sequence
+
+
+def calculate_even_steps(s, e):
+    s = np.array(s)
+    e = np.array(e)
+    d = e - s
+    a = np.absolute(d)
+    dv = list(map(lambda x: (x[1] / a[x[0]]) if a[x[0]] != 0 else 0, enumerate(d)))
+    sz = max(a)
+    sequence = [[0, 0, 0] for _ in range(sz)]
+    f = np.floor(np.array(list(map(lambda x: (sz / x) if x != 0 else 0, a))))
+    m = [0, 0, 0]
+    for i in range(1, sz + 1):
+        for j in range(3):
+            if dv[j] != 0 and i % f[j] == 0 and m[j] < a[j]:
+                sequence[i - 1][j] = int(dv[j])
+                m[j] += 1
+    return sequence
